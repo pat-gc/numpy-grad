@@ -127,3 +127,37 @@
         1    0.000    0.000    0.000    0.000 {method 'release' of '_thread.RLock' objects}
         1    0.000    0.000    0.000    0.000 <string>:2(__init__)
         1    0.000    0.000    0.000    0.000 history.py:1225(hold)
+
+## batching with batch size 12:
+
+ 373567 function calls (373565 primitive calls) in 1.250 seconds
+
+   Ordered by: cumulative time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+       15    0.012    0.001    1.663    0.111 base_events.py:1976(_run_once)
+     5000    0.010    0.000    1.008    0.000 3363355070.py:253(step_accumulate_batch)
+      2/1    0.000    0.000    0.793    0.793 {built-in method builtins.exec}
+      2/1    0.000    0.000    0.793    0.793 <string>:1(<module>)
+     5000    0.016    0.000    0.546    0.000 3363355070.py:202(accumulate_gradients_batch)
+    20000    0.466    0.000    0.531    0.000 3363355070.py:105(accumulate_gradients_batch)
+       15    0.000    0.000    0.463    0.031 events.py:92(_run)
+     5000    0.011    0.000    0.326    0.000 3363355070.py:187(forward_batch)
+    20000    0.316    0.000    0.316    0.000 3363355070.py:96(forward_batch)
+     5000    0.133    0.000    0.218    0.000 3363355070.py:247(step_learn)
+     5000    0.055    0.000    0.126    0.000 3363355070.py:261(z_loss_and_gradient_batch)
+    40000    0.023    0.000    0.112    0.000 {method 'sum' of 'numpy.ndarray' objects}
+    45000    0.094    0.000    0.094    0.000 {method 'reduce' of 'numpy.ufunc' objects}
+    40000    0.014    0.000    0.090    0.000 _methods.py:47(_sum)
+     5000    0.007    0.000    0.053    0.000 3363355070.py:39(zero_grad)
+    20000    0.013    0.000    0.045    0.000 3363355070.py:136(zero_grad)
+        1    0.000    0.000    0.045    0.045 3363355070.py:14(train)
+    40000    0.033    0.000    0.033    0.000 {method 'fill' of 'numpy.ndarray' objects}
+    45000    0.022    0.000    0.032    0.000 3363355070.py:192(parameters)
+     5000    0.004    0.000    0.024    0.000 {method 'max' of 'numpy.ndarray' objects}
+...
+        1    0.000    0.000    0.000    0.000 {built-in method _thread.allocate_lock}
+        2    0.000    0.000    0.000    0.000 traitlets.py:3484(validate_elements)
+        1    0.000    0.000    0.000    0.000 {method 'release' of '_thread.lock' objects}
+        1    0.000    0.000    0.000    0.000 <string>:2(__init__)
+        1    0.000    0.000    0.000    0.000 typing.py:2300(cast)
