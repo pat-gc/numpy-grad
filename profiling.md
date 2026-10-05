@@ -93,3 +93,37 @@
         1    0.000    0.000    0.000    0.000 <string>:2(__init__)
         1    0.000    0.000    0.000    0.000 base_events.py:1971(_timer_handle_cancelled)
         1    0.000    0.000    0.000    0.000 {method 'release' of '_thread.lock' objects}
+
+## got rid of np.outer using `np.multiply(gradients_forward[:, np.newaxis], self.activationsin, out=self._tmp)` now
+
+        1444690 function calls (1444685 primitive calls) in 5.290 seconds
+
+   Ordered by: cumulative time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+       53    0.063    0.001    9.673    0.183 base_events.py:1976(_run_once)
+    60000    0.100    0.000    4.954    0.000 3057037471.py:196(step_accumulate_gradients)
+       52    0.004    0.000    4.895    0.094 events.py:92(_run)
+    60000    0.149    0.000    2.741    0.000 3057037471.py:158(accumulate_gradients)
+   240000    2.594    0.000    2.594    0.000 3057037471.py:81(accumulate_gradients)
+    60000    0.149    0.000    1.379    0.000 3057037471.py:148(__call__)
+   240000    1.229    0.000    1.229    0.000 3057037471.py:73(__call__)
+    60000    0.417    0.000    0.737    0.000 3057037471.py:214(z_loss_and_gradient)
+      2/1    0.000    0.000    0.416    0.416 {built-in method builtins.exec}
+      2/1    0.000    0.000    0.416    0.416 <string>:1(<module>)
+        1    0.005    0.005    0.416    0.416 3057037471.py:14(train)
+     5000    0.139    0.000    0.229    0.000 3057037471.py:204(step_learn)
+   120000    0.056    0.000    0.199    0.000 {method 'sum' of 'numpy.ndarray' objects}
+   180000    0.170    0.000    0.170    0.000 {method 'reduce' of 'numpy.ufunc' objects}
+   120000    0.039    0.000    0.143    0.000 _methods.py:47(_sum)
+    60000    0.034    0.000    0.121    0.000 {method 'max' of 'numpy.ndarray' objects}
+    60000    0.022    0.000    0.088    0.000 _methods.py:39(_amax)
+     5000    0.008    0.000    0.056    0.000 3057037471.py:33(zero_grad)
+    20000    0.013    0.000    0.048    0.000 3057037471.py:102(zero_grad)
+       52    0.000    0.000    0.039    0.001 {method 'run' of '_contextvars.Context' objects}
+...
+        1    0.000    0.000    0.000    0.000 {method '__enter__' of 'sqlite3.Connection' objects}
+        2    0.000    0.000    0.000    0.000 {method 'release' of '_thread.lock' objects}
+        1    0.000    0.000    0.000    0.000 {method 'release' of '_thread.RLock' objects}
+        1    0.000    0.000    0.000    0.000 <string>:2(__init__)
+        1    0.000    0.000    0.000    0.000 history.py:1225(hold)
