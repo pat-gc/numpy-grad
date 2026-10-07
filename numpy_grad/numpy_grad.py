@@ -4,7 +4,9 @@ from numpy.typing import NDArray
 import numpy as np
 
 
-    
+from abc import ABC, abstractmethod
+from typing import Iterator
+from numpy.typing import NDArray
 
 class Trainer():
     def __init__(self, optimizer: Optimizer, x_train_set: NDArray, y_train_set: NDArray , batching=False, chunk_size=-1, batch_size = -1):
@@ -31,29 +33,65 @@ class Trainer():
             loss /= size
             if i % report_freq == 0: print(f"step: {i} loss = {loss}")
 
-
-
 class Model(ABC):
 
     layers: list
 
-    @abstractmethod
-    def accumulate_gradients(self, gradients_forward): pass
     
     def zero_grad(self):
         for layer in self.layers: layer.zero_grad()
 
-    @abstractmethod
-    def __call__(self, x): pass
 
-    @abstractmethod
-    def parameters(self) -> Iterator[tuple[NDArray[np.float32], NDArray[np.float32]]]: pass
+    def __call__(self, activations): # single inference
+            for layer in self.layers:
+                activations = layer(activations)
+            return activations
+    
+    def forward_batch(self, activations):
+        for layer in self.layers:
+            activations = layer.forward_batch(activations)
+        return activations
 
-    @abstractmethod
-    def forward_batch(self, x): pass
+    def parameters(self) -> Iterator[tuple[NDArray[np.float32], NDArray[np.float32]]]:
+        for layer in self.layers:
+            yield from layer.parameters()
+            
 
-    @abstractmethod
-    def accumulate_gradients_batch(self, gradients_forward): pass
+    def accumulate_gradients(self, gradients_forward):
+
+        for layer in reversed(self.layers):
+            gradients_forward = layer.accumulate_gradients(gradients_forward=gradients_forward)
+
+    def accumulate_gradients_batch(self, gradients_forward):
+            for layer in reversed(self.layers):
+                gradients_forward = layer.accumulate_gradients_batch(gradients_forward)
+
+    def __repr__(self):
+                out = ""
+                for k, layer in enumerate(self.layers):
+                    out += f"Layer {k}: {str(layer)}\n\n"
+                return out
+
+    def stats(self):
+            header = f"{'Layer':<7}{'Inputs':>10}{'Neurons':>10}{'Params':>12}  {'Activation':<10}"
+            line = "-" * len(header)
+    
+            print(line)
+            print(header)
+            print(line)
+    
+            total = 0
+            for k, layer in enumerate(self.layers):
+                params = layer.nout * (layer.nin + 1)   # weights + biases
+                total += params
+                act = "ReLU" if layer.nonlin else "Linear"
+                print(f"{k:<7}{layer.nin:>10,}{layer.nout:>10,}{params:>12,}  {act:<10}")
+    
+            print(line)
+            print(f"Layers: {len(self.layers)}")
+            print(f"Total parameters: {total:,}")
+            print(f"Memory (weights, float32): {total * 4 / 1e6:.2f} MB")
+            print(line)
 
     
 class Optimizer(ABC):
@@ -66,8 +104,6 @@ class Optimizer(ABC):
 
     @abstractmethod
     def step_accumulate_batch(self, x, y) -> float: pass
-
-
 
 class Layer():
     def __init__(self, nin, nout, nonlin, seed=42): # eah nout is a neuron
@@ -168,6 +204,7 @@ class Layer():
             
         return "\n".join(lines)
 
+
     
 class MLP(Model):
     def __init__(self, nin, nouts): # int, int[]
@@ -182,57 +219,6 @@ class MLP(Model):
             self.layers.append(Layer(nin=nouts[i-1], nout=width, nonlin=True, seed=42 + i))
 
         if len(nouts) > 1: self.layers.append(Layer(nin=nouts[-2], nout=nouts[-1], nonlin=False))
-
-    def __call__(self, activations): # single inference
-        for layer in self.layers:
-            activations = layer(activations)
-        return activations
-
-    def forward_batch(self, activations):
-        for layer in self.layers:
-            activations = layer.forward_batch(activations)
-        return activations
-
-    def parameters(self):
-        for layer in self.layers:
-            yield from layer.parameters()
-            
-
-    def accumulate_gradients(self, gradients_forward):
-
-        for layer in reversed(self.layers):
-            gradients_forward = layer.accumulate_gradients(gradients_forward=gradients_forward)
-
-    def accumulate_gradients_batch(self, gradients_forward):
-        for layer in reversed(self.layers):
-            gradients_forward = layer.accumulate_gradients_batch(gradients_forward)
-
-    def __repr__(self):
-            out = ""
-            for k, layer in enumerate(self.layers):
-                out += f"Layer {k}: {str(layer)}\n\n"
-            return out
-    
-    def stats(self):
-        header = f"{'Layer':<7}{'Inputs':>10}{'Neurons':>10}{'Params':>12}  {'Activation':<10}"
-        line = "-" * len(header)
-
-        print(line)
-        print(header)
-        print(line)
-
-        total = 0
-        for k, layer in enumerate(self.layers):
-            params = layer.nout * (layer.nin + 1)   # weights + biases
-            total += params
-            act = "ReLU" if layer.nonlin else "Linear"
-            print(f"{k:<7}{layer.nin:>10,}{layer.nout:>10,}{params:>12,}  {act:<10}")
-
-        print(line)
-        print(f"Layers: {len(self.layers)}")
-        print(f"Total parameters: {total:,}")
-        print(f"Memory (weights, float32): {total * 4 / 1e6:.2f} MB")
-        print(line)
 
 
 class SGD(Optimizer): # Standard Gradient Decent, dumb decent
@@ -282,4 +268,33 @@ def z_loss(z, y): # only use when gradient is not needed, else prefer z_loss_and
     z_shifted = z - np.max(z)                      # for numerical stability
     log_probs = z_shifted - np.log(np.sum(np.exp(z_shifted)))   # log-softmax
     return -np.sum(y * log_probs)
+    
+
+class Sequential_Model(Model):
+    def __init__(self, *layers):
+        self.layers = list(layers)
+        
+    def __call__(self, activations): # single inference
+            for layer in self.layers:
+                activations = layer(activations)
+            return activations
+    
+    def forward_batch(self, activations):
+        for layer in self.layers:
+            activations = layer.forward_batch(activations)
+        return activations
+
+    def parameters(self):
+        for layer in self.layers:
+            yield from layer.parameters()
+            
+
+    def accumulate_gradients(self, gradients_forward):
+
+        for layer in reversed(self.layers):
+            gradients_forward = layer.accumulate_gradients(gradients_forward=gradients_forward)
+
+    def accumulate_gradients_batch(self, gradients_forward):
+            for layer in reversed(self.layers):
+                gradients_forward = layer.accumulate_gradients_batch(gradients_forward)
     
